@@ -18,7 +18,14 @@ ROOMS = [
     (4, "Group Room D", 8),
 ]
 
-_BOOKING_COLUMNS = 'id, room_id, date, start, "end", booked_by'
+_LIST_BY_DATE = (
+    'SELECT id, room_id, date, start, "end", booked_by FROM bookings'
+    " WHERE date = ? ORDER BY room_id, start, id"
+)
+_LIST_BY_DATE_AND_ROOM = (
+    'SELECT id, room_id, date, start, "end", booked_by FROM bookings'
+    " WHERE date = ? AND room_id = ? ORDER BY room_id, start, id"
+)
 
 
 def _booking(row: sqlite3.Row) -> dict[str, Any]:
@@ -69,14 +76,11 @@ class Repository:
         return [{"id": r["id"], "name": r["name"], "capacity": r["capacity"]} for r in rows]
 
     def list_bookings(self, date: str, room_id: int | None = None) -> list[dict[str, Any]]:
-        sql = f"SELECT {_BOOKING_COLUMNS} FROM bookings WHERE date = ?"
-        params: list[Any] = [date]
-        if room_id is not None:
-            sql += " AND room_id = ?"
-            params.append(room_id)
-        sql += " ORDER BY room_id, start, id"
         with closing(self._connect()) as conn:
-            rows = conn.execute(sql, params).fetchall()
+            if room_id is None:
+                rows = conn.execute(_LIST_BY_DATE, (date,)).fetchall()
+            else:
+                rows = conn.execute(_LIST_BY_DATE_AND_ROOM, (date, room_id)).fetchall()
         return [_booking(r) for r in rows]
 
     def has_overlap(self, room_id: int, date: str, start: str, end: str) -> bool:
