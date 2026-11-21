@@ -60,3 +60,12 @@ review:    read the diff against R2 to R9. The checks in create_booking run in t
 checks:    smoke run through BookingService on a temp file, one payload per rule plus R9 pairs: true/"1"/1.0 -> invalid_request; ""+07:00 -> invalid_name; 07:00+room 9 -> invalid_time; room 9 -> room_not_found; overlap -> overlap; 180 min OK, 210 min -> invalid_time; huge ids -> 404 codes, no crash. python tools/check_layers.py: only L4 for main.py and routes.py (expected). python -m pytest tests/acceptance: 6 failed, 194 errors, still no app.main (expected).
 evidence:  R2 to R9, D1, D2, D4, D5, D6, D10; plan Task 2
 risk:      the HTTP layer is not written yet, so invalid JSON and the framework's own 422s are untested until Task 3.
+
+## Entry 5
+artifact:  commit 9e9f799 (Task 3), app/routes.py and app/main.py; then evidence/page.png
+tool:      Claude (claude.ai agent session built on Claude Code 2.1.330), main agent, model Claude Opus 5.5 (claude-opus-5-5), 2026-11-21; screenshot by a Playwright script driving headless Chrome against the real uvicorn server
+prompts:   Task 3 of docs/plan.md; prompts/06-task3.txt
+review:    read the diff. Routes read the query, the body and the path id as raw strings, so FastAPI's own validation never produces a non-R9 body. Invalid JSON, including an empty body, gives 422 invalid_request. routes.py imports the service, not the repository (L3). The one error_response helper is reused by main.py's RequestValidationError safety net. The status map matches section 6. create_app builds a fresh repository per db_path and serves the three frontend files. A path outside section 4 (/api/nope) keeps FastAPI's default {"detail": ...} body, as D11 says.
+checks:    python tools/check_layers.py: passed, L1 to L5. python -m pytest tests/acceptance: 200 passed, with no test edited. With uvicorn on port 8000 and curl: an empty body gives 422 invalid_request; a text/plain body is still parsed (D3); an overlap gives 409; delete gives 204. In the browser (headless Chrome, page untouched): booked Priya in room B, booked and then cancelled "Temp booking" ("Booking cancelled."), and an overlapping booking for Ben showed the page's overlap message, which is in the screenshot.
+evidence:  R1 to R10, D3, D11; plan Task 3; evidence/page.png
+risk:      two requests at the same moment can both pass has_overlap (ADR 0001). The screenshot is headless Chrome on Linux, not a desktop browser.
