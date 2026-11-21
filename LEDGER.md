@@ -51,3 +51,12 @@ review:    read the diff. Every method opens and closes its own connection, all 
 checks:    smoke run on a temp file: init_db twice leaves 4 rooms; an overlapping booking is found, while a touching one and one in another room are not; delete returns True, then False; the id after a delete is 2, not reused. python tools/check_layers.py: only L4 "missing module" lines for the four files not written yet (expected). python -m pytest tests/acceptance: 6 failed, 194 errors, all from the missing app.main (expected until Task 3).
 evidence:  R1, R2, R7, R8, R10, D8, D9; plan Task 1
 risk:      the separate has_overlap + insert_booking leaves a race between two requests at the same moment (deferred to ADR 0001); a huge room_id integer would overflow sqlite, so the service must guard it.
+
+## Entry 4
+artifact:  commit 394e26d (Task 2), app/models.py and app/service.py
+tool:      Claude (claude.ai agent session built on Claude Code 2.1.330), main agent, model Claude Opus 5.5 (claude-opus-5-5), 2026-11-21
+prompts:   Task 2 of docs/plan.md; prompts/06-task2.txt
+review:    read the diff against R2 to R9. The checks in create_booking run in the R9 order: R3, then R4, R5, R6, R7, and the only write comes after all of them. The pydantic model is strict, so true, 1.0 and "1" are wrong types (D1). The regexes use [0-9] and fullmatch, so a trailing newline or non-ASCII digits are rejected (D2). The date also goes through datetime.date (D10). R5 has five conditions, one for each bullet in the spec plus both ends; the length is "> 180" so exactly 180 minutes is allowed. R6 checks against the room ids in Python, so a 10**30 room_id never reaches sqlite. In R2 both format checks come before the room lookup (D6). The message text is free-form, which the spec allows. Neither file has any HTTP or SQL.
+checks:    smoke run through BookingService on a temp file, one payload per rule plus R9 pairs: true/"1"/1.0 -> invalid_request; ""+07:00 -> invalid_name; 07:00+room 9 -> invalid_time; room 9 -> room_not_found; overlap -> overlap; 180 min OK, 210 min -> invalid_time; huge ids -> 404 codes, no crash. python tools/check_layers.py: only L4 for main.py and routes.py (expected). python -m pytest tests/acceptance: 6 failed, 194 errors, still no app.main (expected).
+evidence:  R2 to R9, D1, D2, D4, D5, D6, D10; plan Task 2
+risk:      the HTTP layer is not written yet, so invalid JSON and the framework's own 422s are untested until Task 3.
