@@ -87,3 +87,12 @@ review:    spec: checked that the diff only adds R11, the section 6 row, R11 at 
 checks:    python tools/check_layers.py: passed. python -m pytest: 209 passed (200 locked + 9 R11). In headless Chrome on the real server: "Sam", "sam " and "SAM" on one day; the third got the page's own message "You already have 2 bookings on that day. Cancel one to book another."
 evidence:  R11, R9 order; tests test_r11_*
 risk:      "ignoring case" is done with str.lower(), so some Unicode case pairs (for example "ß" and "SS") are not treated as the same person. The R11 count, like R7, is a separate read before the insert and shares the race described in ADR 0001.
+
+## Entry 8
+artifact:  commits 456c61a (ADR 0001 change: write transaction) and de14eb7 (ADR 0001), app/repository.py, app/service.py, docs/adr/0001-serialize-booking-writes.md, evidence/race_check.py
+tool:      Claude (claude.ai agent session built on Claude Code 2.1.330), main agent, model Claude Opus 5.5 (claude-opus-5-5), 2026-11-21
+prompts:   the Part 9 question, the summary of the answer, and the follow-up task prompt; prompts/09-adr.txt
+review:    did not take the race on faith: wrote evidence/race_check.py (8 threads, 30 trials) and saw 28/30 trials save overlapping bookings before the change. Weighed five options (BEGIN IMMEDIATE, threading.Lock, trigger, INSERT...WHERE NOT EXISTS, nothing). Rejected threading.Lock because it does not cover two processes, and the trigger and the single statement because they cannot report overlap and daily_limit separately in the R9 order. Read the diff. write_transaction commits only after the with block ends and rolls back on BookingError. The SQL stayed in repository.py (BookingWrite) and the rules stayed in service.py; the old separate-connection has_overlap and names_on_date were removed so nothing can bypass the lock. R3 to R6 stay outside the lock, because they read nothing that can change.
+checks:    python tools/check_layers.py: passed. python -m pytest: 209 passed. python evidence/race_check.py .: 0/30 trials with an overlap, down from 28/30.
+evidence:  R7, R11, R9 order; ADR 0001
+risk:      the race script is timing-based, so 0/30 is strong evidence but not proof. Behaviour when the 10 s busy timeout runs out (a database is locked error, which would give a 500) is not handled or tested.
