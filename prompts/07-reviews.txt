@@ -1,0 +1,16 @@
+Prompt (verbatim, HANDOUT.md Part 7 step 1), to the main agent, 2026-11-21:
+
+Run the reviewer subagent on the files in app/ and the contract-checker subagent,
+at the same time. Then save each report, exactly as it was returned, in
+evidence/review.md and evidence/contract-check.md. Do not fix anything yet.
+
+How it ran: both started at the same time as read-only (Explore-type) subagents. Each was
+given the body of .claude/agents/reviewer.md or .claude/agents/contract-checker.md
+verbatim and limited to Read, Grep and Glob, because this session cannot load project
+agent files as named types. Task lines added: "Review the files in app/. Return only
+your findings list, in exactly the format above." / "Check the contract now. Return
+only your table and mismatch list."
+
+Follow-up prompts for accepted findings, one at a time, in the form:
+Fix finding <n> from evidence/<file>.md and nothing else. Run the tests and the layer
+check, and report both.
