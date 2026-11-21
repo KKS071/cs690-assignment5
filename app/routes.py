@@ -54,7 +54,8 @@ async def create_booking(request: Request) -> JSONResponse:
     raw = await request.body()
     try:
         data = json.loads(raw)
-    except ValueError:
+    except (ValueError, RecursionError):
+        # RecursionError: a body nested too deeply to parse still gets the R9 body.
         return error_response("invalid_request", "The body is not valid JSON.")
     try:
         booking = _service(request).create_booking(data)
