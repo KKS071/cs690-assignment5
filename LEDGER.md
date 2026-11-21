@@ -42,3 +42,12 @@ review:    read all ten files line by line against the spec before running anyth
 checks:    python tools/check.py tests: 200 collected, a test for each of R1 to R10, 0 passed and 200 errored, all with "No module named 'app.main'".
 evidence:  R1 to R10; tag a5-tests-locked
 risk:      the tests have not run against any backend yet, so a wrong expected value would only show up in Part 6 and could not be fixed then. The lock has not yet been shown to block an edit: evidence/permission-denied.md still has to be captured in local Claude Code.
+
+## Entry 3
+artifact:  commit 26be5f1 (Task 1), app/repository.py
+tool:      Claude (claude.ai agent session built on Claude Code 2.1.330), main agent, model Claude Opus 5.5 (claude-opus-5-5), 2026-11-21
+prompts:   Task 1 of docs/plan.md; prompts/06-task1.txt
+review:    read the diff. Every method opens and closes its own connection, all SQL uses ? placeholders, "end" is quoted because END is an SQL keyword, rooms are seeded only when the table is empty, list order is room_id, start, id (D8), and AUTOINCREMENT keeps ids from being reused (D9). The overlap query is start < new_end AND new_start < end, which is R7's "each starts before the other ends". It has no validation, as the plan says. Nothing outside app/repository.py changed.
+checks:    smoke run on a temp file: init_db twice leaves 4 rooms; an overlapping booking is found, while a touching one and one in another room are not; delete returns True, then False; the id after a delete is 2, not reused. python tools/check_layers.py: only L4 "missing module" lines for the four files not written yet (expected). python -m pytest tests/acceptance: 6 failed, 194 errors, all from the missing app.main (expected until Task 3).
+evidence:  R1, R2, R7, R8, R10, D8, D9; plan Task 1
+risk:      the separate has_overlap + insert_booking leaves a race between two requests at the same moment (deferred to ADR 0001); a huge room_id integer would overflow sqlite, so the service must guard it.
