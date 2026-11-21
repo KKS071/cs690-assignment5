@@ -1,0 +1,17 @@
+Prompt (verbatim, HANDOUT.md Part 5), given to a read-only planning agent (Plan subagent,
+no edit tools: this session's stand-in for plan mode), 2026-11-21:
+
+Plan the backend for docs/spec.md, rules R1 to R10, in three tasks: Task 1,
+app/repository.py; Task 2, app/models.py and app/service.py; Task 3,
+app/routes.py and app/main.py. For each task, list the files it creates and what
+"done" means, including which acceptance tests should pass after it. End with a
+section called "Not in this change". The tests in tests/acceptance/ must pass
+without being edited, and nothing in frontend/ changes.
+
+Context added by the main agent: read AGENTS.md, docs/spec.md, tools/check_layers.py,
+tests/conftest.py; stdlib sqlite3 only; layer rules L1-L5; a new connection per call;
+acceptance tests go through HTTP, so say honestly that they still error until Task 3;
+use the headings ## Task 1, ## Task 2, ## Task 3, ## Not in this change.
+
+Review outcome: accepted, except the atomic BEGIN IMMEDIATE check-and-insert in Task 1,
+which was moved to "Not in this change" until ADR 0001 (Part 9) decides it.
