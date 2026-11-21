@@ -96,3 +96,12 @@ review:    did not take the race on faith: wrote evidence/race_check.py (8 threa
 checks:    python tools/check_layers.py: passed. python -m pytest: 209 passed. python evidence/race_check.py .: 0/30 trials with an overlap, down from 28/30.
 evidence:  R7, R11, R9 order; ADR 0001
 risk:      the race script is timing-based, so 0/30 is strong evidence but not proof. Behaviour when the 10 s busy timeout runs out (a database is locked error, which would give a 500) is not handled or tested.
+
+## Entry 9
+artifact:  commits e33a472 (Characterization tests for old_format, tests/legacy/test_old_format.py) and 01409bc (Refactor old_format, legacy/old_format.py)
+tool:      Claude (claude.ai agent session built on Claude Code 2.1.330), main agent, model Claude Opus 5.5 (claude-opus-5-5), 2026-11-21 (not the test-writer: characterization values come from running code, which its rules forbid)
+prompts:   the characterization-test request and the verbatim refactor prompt; prompts/10-legacy.txt
+review:    expected values came from running the original on the sample and on odd inputs. 36 tests pin normal cases, 12 wrong results (each marked "# BUG: pinned, not fixed": 12 PM -> 24, 12 AM -> 12, lowercase pm ignored, unpadded minutes, "9:00AM" kept, 13 PM -> 25, 1- and 3-digit years kept, day/month swap, ...) and the exact exception classes (KeyError, IndexError, ValueError, AttributeError). Before committing them, ran them against 17 one-change copies of the original: all 17 were caught. In the refactor, a tempting rewrite was "hour, minutes = clock" unpacking. It was not used, because it would turn the IndexError for "9" into a ValueError; int(hour) is still evaluated before the minutes, so ":30" still raises ValueError. The field order room, day, who, from, to is kept so a row with several problems raises the same error. No bug was fixed.
+checks:    python -m pytest tests/legacy: 36 passed, before and after, with the test file unchanged (git diff tests/ empty). The sample export output is byte-identical to the original's. A differential fuzz of original vs refactored over 144,800 inputs (random strings, None, ints, rows with missing columns) showed 0 differences in result or exception type. Every function has type hints (tools/check.py).
+evidence:  Part 10; tests test_legacy_*
+risk:      the fuzz compared exception types, not messages; nothing pins exception message text. Callers that pass non-dict rows (for example a csv row with None values) are covered only by the fuzz, not by named tests.
