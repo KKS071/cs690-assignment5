@@ -1,0 +1,25 @@
+Prompt to the main agent (verbatim, HANDOUT.md Part 4 step 1), 2026-11-21:
+
+Use the test-writer subagent to write acceptance tests for rules R1 to R10 of
+docs/spec.md, in tests/acceptance/. There is no backend yet, so do not run the
+code to find expected values. Report the tests by rule.
+
+-----------------------------------------------------------------------------
+How it ran: this cloud session cannot load .claude/agents/ files as named agent
+types (the Agent tool answered "Agent type 'test-writer' not found"), so the main
+agent started a general-purpose subagent and gave it the body of
+.claude/agents/test-writer.md verbatim as its instructions, limited to the tools
+that file lists. The extra notes the main agent added to the subagent prompt:
+
+- Read docs/spec.md (all of it, including D1-D11) and tests/conftest.py first.
+- Do NOT write tests for anything only in "Proposed, not built" (daily_limit).
+- Do not write tests whose expected value depends on a section 7 judgement call that a
+  different correct backend might decide differently ("+1"/"01" ids, Content-Type,
+  unknown paths). Booleans/strings as room_id are fine: R3 says integer.
+- Every expected value must follow from the spec text. Do not assume id values; use the
+  id returned by POST. For an unknown booking id, use a deleted id or 999999.
+- R1: assert the exact four rooms. R10: GET /, /app.js, /styles.css; two db files do
+  not share data; the same file is seen again by a second new_client("a.db").
+- Aim for 45-70 tests. Helpers live inside each test file.
+- Invalid JSON: content=b"{not json" with Content-Type application/json.
+- "Saved nothing": compare GET /api/bookings?date=<date> before and after.
