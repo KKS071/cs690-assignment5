@@ -1,0 +1,20 @@
+Part 8, R11 daily limit, 2026-11-21.
+
+Step 1 (spec): no AI prompt; the R11 text, the section 6 row, the R9 order, the
+version line and the change log were copied from HANDOUT.md Part 8 into docs/spec.md.
+
+Step 2 (test): tests/acceptance/test_r11_daily_limit.py was put in place outside the
+agent's permissions (the lock binds the agent). The draft was written in the chat by the
+assistant, and every expected value was checked against R11 and the R9 order before
+committing. Draft request: "Write tests named test_r11_... for R11: a third booking on
+one date is rejected with 409 daily_limit and not saved; the same name with different
+case and spaces counts as the same person; cancelling one of two bookings allows a new
+one; also other people, other dates, all rooms counted, and R7/R6/R5 reported before
+R11."
+
+Step 3 (code), prompt to the main agent (verbatim, HANDOUT.md Part 8):
+
+docs/spec.md now has rule R11 (daily limit), and
+tests/acceptance/test_r11_daily_limit.py tests it. Implement R11 and nothing
+else, following AGENTS.md. Run python tools/check_layers.py and
+python -m pytest, and report the results.
