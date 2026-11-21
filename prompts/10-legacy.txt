@@ -1,0 +1,20 @@
+Part 10, 2026-11-21.
+
+Characterization tests (tests/legacy/test_old_format.py): written by the main agent,
+not the test-writer (its rules forbid expected values from running code). Request:
+"Read legacy/old_format.py, run to_24h and parse_old_row on the sample export and on
+odd inputs (12 PM / 12 AM, lowercase pm, unpadded minutes, no space before AM, two-,
+one- and three-digit years, day/month swapped, empty or blank names, unknown rooms,
+missing columns, missing slashes, non-string input), and pin exactly what the
+current code returns or raises. Name tests test_legacy_..., use pytest.raises with
+the exact exception class, and put '# BUG: pinned, not fixed' above each test that
+pins a wrong result." Every expected value was checked by running the original code.
+
+Refactor prompt to the main agent (verbatim, HANDOUT.md Part 10 step 4):
+
+Refactor legacy/old_format.py for readability without changing what it does: add
+type hints to every function, give each function a docstring, remove the
+repeated split calls, and give the magic values names. Keep the function names
+to_24h and parse_old_row, and the same result or exception for every input,
+including the odd ones. Do not edit any test. Run python -m pytest tests/legacy
+and report the result.
