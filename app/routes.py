@@ -22,6 +22,7 @@ STATUS = {
     "room_not_found": 404,
     "booking_not_found": 404,
     "overlap": 409,
+    "daily_limit": 409,
 }
 
 

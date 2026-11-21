@@ -19,6 +19,7 @@ CLOSING = 22 * 60         # 22:00
 MAX_MINUTES = 180         # R5: at most 3 hours
 ALLOWED_MINUTES = {0, 30}
 SQLITE_MAX_INT = 2**63 - 1
+DAILY_LIMIT = 2           # R11: at most two bookings per person per date
 
 
 class BookingError(Exception):
@@ -26,6 +27,11 @@ class BookingError(Exception):
         super().__init__(message)
         self.code = code
         self.message = message
+
+
+def _person_key(name: str) -> str:
+    """R11: two names are the same person after trimming and ignoring case."""
+    return name.strip().lower()
 
 
 def _minutes(hhmm: str) -> int:
@@ -56,7 +62,7 @@ class BookingService:
                 raise BookingError("room_not_found", "There is no room with that id.")
         return self.repo.list_bookings(date, room)
 
-    # R3 to R7, checked in the R9 order; nothing is written until every check passes.
+    # R3 to R7 and R11, checked in the R9 order; nothing is written until every check passes.
     def create_booking(self, data: object) -> dict[str, Any]:
         # R3
         if not isinstance(data, dict):
@@ -92,6 +98,12 @@ class BookingService:
         # R7
         if self.repo.has_overlap(req.room_id, req.date, req.start, req.end):
             raise BookingError("overlap", "That room is already booked for part of that time.")
+
+        # R11: same person = equal after trimming and ignoring case, across all rooms.
+        person = _person_key(name)
+        held = sum(1 for other in self.repo.names_on_date(req.date) if _person_key(other) == person)
+        if held >= DAILY_LIMIT:
+            raise BookingError("daily_limit", "That person already has 2 bookings on that date.")
 
         return self.repo.insert_booking(req.room_id, req.date, req.start, req.end, name)
 

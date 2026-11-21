@@ -93,6 +93,12 @@ class Repository:
             ).fetchone()
         return row is not None
 
+    def names_on_date(self, date: str) -> list[str]:
+        """The booked_by value of every booking on that date, in any room (for R11)."""
+        with closing(self._connect()) as conn:
+            rows = conn.execute("SELECT booked_by FROM bookings WHERE date = ?", (date,)).fetchall()
+        return [r["booked_by"] for r in rows]
+
     def insert_booking(self, room_id: int, date: str, start: str, end: str, booked_by: str) -> dict[str, Any]:
         with closing(self._connect()) as conn, conn:
             cur = conn.execute(
