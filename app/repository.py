@@ -8,7 +8,8 @@ not validate. The service decides what is allowed.
 from __future__ import annotations
 
 import sqlite3
-from contextlib import closing
+from collections.abc import Iterator
+from contextlib import closing, contextmanager
 from typing import Any
 
 ROOMS = [
@@ -83,32 +84,54 @@ class Repository:
                 rows = conn.execute(_LIST_BY_DATE_AND_ROOM, (date, room_id)).fetchall()
         return [_booking(r) for r in rows]
 
-    def has_overlap(self, room_id: int, date: str, start: str, end: str) -> bool:
-        """True when a booking in that room on that date overlaps [start, end).
-        HH:MM strings are fixed width, so comparing them as text compares the times."""
-        with closing(self._connect()) as conn:
-            row = conn.execute(
-                'SELECT 1 FROM bookings WHERE room_id = ? AND date = ? AND start < ? AND ? < "end" LIMIT 1',
-                (room_id, date, end, start),
-            ).fetchone()
-        return row is not None
-
-    def names_on_date(self, date: str) -> list[str]:
-        """The booked_by value of every booking on that date, in any room (for R11)."""
-        with closing(self._connect()) as conn:
-            rows = conn.execute("SELECT booked_by FROM bookings WHERE date = ?", (date,)).fetchall()
-        return [r["booked_by"] for r in rows]
-
-    def insert_booking(self, room_id: int, date: str, start: str, end: str, booked_by: str) -> dict[str, Any]:
-        with closing(self._connect()) as conn, conn:
-            cur = conn.execute(
-                'INSERT INTO bookings (room_id, date, start, "end", booked_by) VALUES (?, ?, ?, ?, ?)',
-                (room_id, date, start, end, booked_by),
-            )
-            booking_id = cur.lastrowid
-        return {"id": booking_id, "room_id": room_id, "date": date, "start": start, "end": end, "booked_by": booked_by}
+    @contextmanager
+    def write_transaction(self) -> Iterator["BookingWrite"]:
+        """One connection holding SQLite's write lock (BEGIN IMMEDIATE) from the first
+        check to the insert, so two requests cannot both pass R7 or R11 and then both
+        insert (ADR 0001). Commits on success, rolls back on any exception."""
+        conn = self._connect()
+        conn.isolation_level = None  # we issue BEGIN / COMMIT / ROLLBACK ourselves
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            try:
+                yield BookingWrite(conn)
+            except BaseException:
+                conn.execute("ROLLBACK")
+                raise
+            conn.execute("COMMIT")
+        finally:
+            conn.close()
 
     def delete_booking(self, booking_id: int) -> bool:
         with closing(self._connect()) as conn, conn:
             cur = conn.execute("DELETE FROM bookings WHERE id = ?", (booking_id,))
             return cur.rowcount == 1
+
+
+class BookingWrite:
+    """Reads and the insert for one booking, all on the connection of one
+    write_transaction (ADR 0001)."""
+
+    def __init__(self, conn: sqlite3.Connection) -> None:
+        self._conn = conn
+
+    def has_overlap(self, room_id: int, date: str, start: str, end: str) -> bool:
+        """True when a booking in that room on that date overlaps [start, end).
+        HH:MM strings are fixed width, so comparing them as text compares the times."""
+        row = self._conn.execute(
+            'SELECT 1 FROM bookings WHERE room_id = ? AND date = ? AND start < ? AND ? < "end" LIMIT 1',
+            (room_id, date, end, start),
+        ).fetchone()
+        return row is not None
+
+    def names_on_date(self, date: str) -> list[str]:
+        """The booked_by value of every booking on that date, in any room (for R11)."""
+        rows = self._conn.execute("SELECT booked_by FROM bookings WHERE date = ?", (date,)).fetchall()
+        return [r["booked_by"] for r in rows]
+
+    def insert_booking(self, room_id: int, date: str, start: str, end: str, booked_by: str) -> dict[str, Any]:
+        cur = self._conn.execute(
+            'INSERT INTO bookings (room_id, date, start, "end", booked_by) VALUES (?, ?, ?, ?, ?)',
+            (room_id, date, start, end, booked_by),
+        )
+        return {"id": cur.lastrowid, "room_id": room_id, "date": date, "start": start, "end": end, "booked_by": booked_by}

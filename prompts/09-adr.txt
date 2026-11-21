@@ -1,0 +1,24 @@
+Part 9, 2026-11-21.
+
+Question to the main agent (verbatim, HANDOUT.md Part 9):
+
+Look at how app/service.py and app/repository.py check for an overlap and then
+insert a booking. Can two requests that arrive at the same moment both pass the
+check? List the ways to prevent it with SQLite, with one advantage and one cost
+each. Do not edit files.
+
+Answer, in short: yes. has_overlap, names_on_date and insert_booking each open their
+own connection and transaction, so two threads can both read "no overlap" before
+either inserts. A script with 8 threads in 30 trials (evidence/race_check.py) saved
+more than one overlapping booking in 28/30 trials. The options listed were: a BEGIN
+IMMEDIATE write transaction around check+insert; a process-wide threading.Lock; a
+SQLite trigger that raises on overlap; an INSERT ... SELECT ... WHERE NOT EXISTS
+single statement; and doing nothing. Each came with one advantage and one cost (see
+docs/adr/0001-serialize-booking-writes.md).
+
+Follow-up task prompt for the decided change:
+
+Implement the decision in docs/adr/0001: run the R7 and R11 checks and the insert
+inside one BEGIN IMMEDIATE transaction on one connection. Keep the rules in
+app/service.py and the SQL in app/repository.py. Change nothing else. Run
+python tools/check_layers.py and python -m pytest, and report the results.

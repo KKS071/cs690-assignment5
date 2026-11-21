@@ -95,17 +95,19 @@ class BookingService:
         if req.room_id not in self._room_ids():
             raise BookingError("room_not_found", "There is no room with that id.")
 
-        # R7
-        if self.repo.has_overlap(req.room_id, req.date, req.start, req.end):
-            raise BookingError("overlap", "That room is already booked for part of that time.")
+        # R7, R11 and the insert run inside one write transaction (ADR 0001).
+        with self.repo.write_transaction() as tx:
+            # R7
+            if tx.has_overlap(req.room_id, req.date, req.start, req.end):
+                raise BookingError("overlap", "That room is already booked for part of that time.")
 
-        # R11: same person = equal after trimming and ignoring case, across all rooms.
-        person = _person_key(name)
-        held = sum(1 for other in self.repo.names_on_date(req.date) if _person_key(other) == person)
-        if held >= DAILY_LIMIT:
-            raise BookingError("daily_limit", "That person already has 2 bookings on that date.")
+            # R11: same person = equal after trimming and ignoring case, across all rooms.
+            person = _person_key(name)
+            held = sum(1 for other in tx.names_on_date(req.date) if _person_key(other) == person)
+            if held >= DAILY_LIMIT:
+                raise BookingError("daily_limit", "That person already has 2 bookings on that date.")
 
-        return self.repo.insert_booking(req.room_id, req.date, req.start, req.end, name)
+            return tx.insert_booking(req.room_id, req.date, req.start, req.end, name)
 
     # R8
     def cancel_booking(self, raw_id: str) -> None:
