@@ -162,11 +162,21 @@ request they accept, accept a request they reject, or change a route, field, sta
 or error code. If you think a rule is missing, write it under "Proposed, not built" with
 your reason; it is not built in this assignment.
 
-- D1.
+- D1. (R3) `room_id` must be a JSON integer: `true`, `false`, `1.0`, `"1"` and `null` are wrong types and give `422 invalid_request`.
+- D2. (R2, R3) Dates and times are matched exactly, ASCII digits only, with no surrounding whitespace; `" 09:00"` or `"２０３１-..."` give `422 invalid_request`.
+- D3. (R3) The body is read as JSON whatever its `Content-Type` header says; an empty body is not valid JSON and gives `422 invalid_request`.
+- D4. (R4) Trimming uses Python's `str.strip()` (all Unicode whitespace), and length is counted in Unicode code points after trimming.
+- D5. (R2, R8) A query `room_id` or path `id` is an integer when it is an optional `+` or `-` followed by ASCII digits (`"01"` and `"+1"` are 1, `"-1"` is -1); `" 1"`, `"1.0"` and `"abc"` give `422 invalid_request`, and an integer that is not a room or booking gives the rule's 404.
+- D6. (R2) All format checks (`date`, then `room_id`) come before the room lookup, so a bad date with an unknown room gives `422 invalid_request`, not 404.
+- D7. (R2) Query parameters other than `date` and `room_id` are ignored, as R3 does for body fields.
+- D8. (R2) Bookings with the same `room_id` and `start` cannot exist under R7; the id is used as a final tiebreak so the order is always defined.
+- D9. (data) Booking ids are never reused, even after a cancel (SQLite `AUTOINCREMENT`).
+- D10. (R2, R3) A "real calendar day" is one Python's `datetime.date` accepts: years 0001 to 9999, leap days only in leap years; `0000-01-01` and `2031-02-30` give `422 invalid_request`.
+- D11. (R9) R9's error body covers the endpoints in section 4, including unparseable path ids. Paths and methods outside section 4 are not part of the contract and keep the framework's default response.
 
 **Proposed, not built.**
 
-- (none yet)
+- A per-person daily booking limit (`daily_limit`): `frontend/app.js` already has a message for this code, but the spec defines no such rule or code, so nothing sends it until the product owner adds it.
 
 ## 8. Change log
 
