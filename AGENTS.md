@@ -18,4 +18,21 @@ another team. The backend in `app/` is built to match `docs/spec.md`.
 
 ## Backend rules
 
-(Part 1: write this section.)
+- Four layers, each with one job. `app/routes.py` speaks HTTP and nothing else: it
+  parses requests, calls the service, and turns results or errors into responses.
+  `app/service.py` is where every rule in spec section 5 is enforced. `app/repository.py`
+  is the only file that imports `sqlite3` or contains SQL. `app/models.py` holds the
+  request shapes. Routes never call the repository directly.
+- `app/main.py` defines `create_app(db_path: str = "roombook.db")` exactly as spec
+  section 3 says: create tables, seed the four rooms once, serve `frontend/`.
+- Every error response, including FastAPI's own validation errors and invalid JSON, has
+  exactly the body `{"error": "<code>", "message": "<text>"}` from R9, with a code from
+  spec section 6.
+- Storage is `sqlite3` from the standard library. No ORM, no new packages.
+- Open a fresh connection per repository call (or per request) and close it; never share
+  one connection between threads.
+- A request that fails must not write anything. Check every rule in the R9 order before
+  the first write.
+- Use parameterised SQL (`?` placeholders) only; never build SQL with string formatting.
+- After every task run `python tools/check_layers.py` and `python -m pytest`, and report
+  both results.
