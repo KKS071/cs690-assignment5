@@ -1,6 +1,6 @@
 # Assignment 5 report
 
-Name: <YOUR FULL NAME>
+Name: Kundan Singh
 Agent tool and version (Claude Code or Antigravity CLI): Claude Code. The work was done in
 a Claude agent session built on Claude Code 2.1.330, with the model Claude Opus 5.5
 (claude-opus-5-5), on 2026-11-21. The permission-refusal evidence still has to be
