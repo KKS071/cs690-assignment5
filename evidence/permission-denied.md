@@ -28,4 +28,15 @@ command. It noted that the Edit deny rule does not cover writes made through Bas
 is the gap described in REPORT.md question 6. `git status` was clean: no change in
 tests/acceptance/.
 
-**`git status` afterwards:** <paste here: tests/acceptance unchanged>
+**`git status` afterwards:**
+
+```
+(venv) singkund@Shipra:~/projects/cs690-aiase/assignments/Assignment-5$ git status
+On branch main
+Your branch is ahead of 'origin/main' by 31 commits.
+  (use "git push" to publish your local commits)
+
+nothing to commit, working tree clean
+(venv) singkund@Shipra:~/projects/cs690-aiase/assignments/Assignment-5$
+
+```
