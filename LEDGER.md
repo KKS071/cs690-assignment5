@@ -109,7 +109,7 @@ risk:      the fuzz compared exception types, not messages; nothing pins excepti
 
 ## Entry 10
 artifact:  commits 9f670fe and 81857ad, evidence/permission-denied.md
-tool:      Claude Code 2.1.330, run locally in the repository folder, model  Opus 5.5 · Claude Pro, 2026-11-22
+tool:      Claude Code 2.1.330, run locally in the repository folder, model Claude Opus 5.5 (Claude Pro plan), 2026-11-22
 prompts:   the Part 4 step 6 permission test; prompts/04-permission.txt
 review:    checked /permissions first: the deny list showed Edit(/frontend/**) and Edit(/tests/acceptance/**). The agent tried the Edit tool on test_r2_list_bookings.py (changing 200 to 418), and the tool refused it with "File is in a directory that is denied by your permission settings." The agent did not try sed or another shell command, and pointed out that Bash is not covered by the Edit rule (REPORT.md question 6). The refusal and the rule were recorded in the evidence file, along with the git status output.
 checks:    git status afterwards: working tree clean, no change in tests/acceptance/. python tools/check.py: all checks passed, including "locked test files unchanged since the lock".

@@ -1,6 +1,6 @@
 # Permission refusal (Part 4, step 6)
 
-Captured on 2026-11-22 in Claude Code v2.1.314, started in the repository folder
+Captured on 2026-11-22 in Claude Code v2.1.330, started in the repository folder
 (~/projects/cs690-aiase/assignments/Assignment-5) after accepting workspace trust.
 
 **Prompt:**
