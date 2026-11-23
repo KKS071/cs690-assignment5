@@ -3,8 +3,8 @@
 Name: Kundan Singh
 Agent tool and version (Claude Code or Antigravity CLI): Claude Code. The work was done in
 a Claude agent session built on Claude Code 2.1.330, with the model Claude Opus 5.5
-(claude-opus-5-5), on 2026-11-21. The permission-refusal evidence still has to be
-captured in local Claude Code (see `evidence/permission-denied.md`).
+(claude-opus-5-5), on 2026-11-21. The permission-refusal evidence was captured afterwards in local
+Claude Code 2.1.330, started in the repository folder (`evidence/permission-denied.md`).
 
 Answer each question in two to five sentences, below the question, unless it asks for a
 table. Point to commits, files, tests or rule IDs where you can.

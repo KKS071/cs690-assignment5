@@ -105,3 +105,13 @@ review:    expected values came from running the original on the sample and on o
 checks:    python -m pytest tests/legacy: 36 passed, before and after, with the test file unchanged (git diff tests/ empty). The sample export output is byte-identical to the original's. A differential fuzz of original vs refactored over 144,800 inputs (random strings, None, ints, rows with missing columns) showed 0 differences in result or exception type. Every function has type hints (tools/check.py).
 evidence:  Part 10; tests test_legacy_*
 risk:      the fuzz compared exception types, not messages; nothing pins exception message text. Callers that pass non-dict rows (for example a csv row with None values) are covered only by the fuzz, not by named tests.
+
+
+## Entry 10
+artifact:  commits 9f670fe and 81857ad, evidence/permission-denied.md
+tool:      Claude Code 2.1.330, run locally in the repository folder, model  Opus 5.5 · Claude Pro, 2026-11-22
+prompts:   the Part 4 step 6 permission test; prompts/04-permission.txt
+review:    checked /permissions first: the deny list showed Edit(/frontend/**) and Edit(/tests/acceptance/**). The agent tried the Edit tool on test_r2_list_bookings.py (changing 200 to 418), and the tool refused it with "File is in a directory that is denied by your permission settings." The agent did not try sed or another shell command, and pointed out that Bash is not covered by the Edit rule (REPORT.md question 6). The refusal and the rule were recorded in the evidence file, along with the git status output.
+checks:    git status afterwards: working tree clean, no change in tests/acceptance/. python tools/check.py: all checks passed, including "locked test files unchanged since the lock".
+evidence:  Part 4 lock; deny rule Edit(/tests/acceptance/**)
+risk:      the deny rule does not stop writes through Bash (sed, python -c); only the grader's comparison with the a5-tests-locked tag would catch that.
